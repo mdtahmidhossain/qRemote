@@ -314,6 +314,8 @@ export function SuperDebugPanel({
 
           if (bodyTrimmed === 'Ok.' || bodyTrimmed === 'Ok') {
             addEntry('LOGIN', `Login successful — "${bodyTrimmed}" (HTTP ${loginResp.status}, ${loginLatency}ms)`, 'success');
+          } else if (loginResp.status === 204 && bodyTrimmed === '') {
+            addEntry('LOGIN', `Login successful — empty response (HTTP ${loginResp.status}, ${loginLatency}ms)`, 'success');
           } else if (bodyTrimmed === 'Fails.' || bodyTrimmed === 'Fails') {
             addEntry('LOGIN', `Login REJECTED — "${bodyTrimmed}" (HTTP ${loginResp.status}, ${loginLatency}ms)`, 'error');
             addEntry('WARN', 'The server said "Fails." which means the username or password is wrong.\n\nChecklist:\n  1. Double-check your username (default: admin)\n  2. Double-check your password\n  3. Check if qBittorrent has locked you out (too many failed attempts)\n  4. Try logging in via the browser first to confirm credentials work', 'warning');
@@ -349,13 +351,15 @@ export function SuperDebugPanel({
             loginResp.headers.get('SET-COOKIE');
 
           if (setCookieHeader) {
-            const sidMatch = setCookieHeader.match(/SID=([^;]+)/i);
+            const sidMatch = setCookieHeader.match(/(QBT_SID_[^=;]+|SID)=([^;]+)/i);
             if (sidMatch) {
-              sidCookie = `SID=${sidMatch[1]}`;
-              const truncated = sidMatch[1].length > 12
-                ? sidMatch[1].substring(0, 12) + '...'
-                : sidMatch[1];
-              addEntry('COOKIE', `Session cookie captured: SID=${truncated}`, 'success');
+              const cookieName = sidMatch[1];
+              const cookieValue = sidMatch[2];
+              sidCookie = `${cookieName}=${cookieValue}`;
+              const truncated = cookieValue.length > 12
+                ? cookieValue.substring(0, 12) + '...'
+                : cookieValue;
+              addEntry('COOKIE', `Session cookie captured: ${cookieName}=${truncated}`, 'success');
               passed++;
             } else {
               addEntry('COOKIE', `set-cookie header found but no SID: "${setCookieHeader.substring(0, 80)}"`, 'warning');
