@@ -30,11 +30,12 @@ export const authApi = {
 
       clogDebug('AUTH', `Response: "${responsePreview}" | Cookies: ${cookies ? 'Yes (' + cookies.length + ' chars)' : 'No'}`);
       
-      // qBittorrent returns 'Ok.' on success, 'Fails.' on failure
+      // qBittorrent 5.2 can return HTTP 204 with an empty body on success.
+      // Axios gives us the empty body here; the captured session cookie confirms login.
       // Handle both string and trimmed string responses
       const responseStr = typeof response === 'string' ? response.trim() : String(response).trim();
       
-      if (responseStr === 'Ok.' || responseStr === 'Ok') {
+      if (responseStr === 'Ok.' || responseStr === 'Ok' || (responseStr === '' && cookies.length > 0)) {
         // Successful login - verify we have session cookies
         if (!cookies || cookies.length === 0) {
           console.warn('[Auth] Warning: Login succeeded but no cookies received. This may cause issues with qBittorrent 5.x');
@@ -81,4 +82,3 @@ export const authApi = {
     apiClient.clearCookies();
   },
 };
-
